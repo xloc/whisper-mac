@@ -1,0 +1,97 @@
+[
+  {
+    "type": "file",
+    "path": "openai_whisper-small/AudioEncoder.mlmodelc/analytics/coremldata.bin",
+    "size": 243
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-small/AudioEncoder.mlmodelc/coremldata.bin",
+    "size": 347
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-small/AudioEncoder.mlmodelc/metadata.json",
+    "size": 1868
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-small/AudioEncoder.mlmodelc/model.mil",
+    "size": 1636668
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-small/AudioEncoder.mlmodelc/model.mlmodel",
+    "size": 155271
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-small/AudioEncoder.mlmodelc/weights/weight.bin",
+    "size": 176323456
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-small/MelSpectrogram.mlmodelc/analytics/coremldata.bin",
+    "size": 243
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-small/MelSpectrogram.mlmodelc/coremldata.bin",
+    "size": 328
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-small/MelSpectrogram.mlmodelc/metadata.json",
+    "size": 1848
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-small/MelSpectrogram.mlmodelc/model.mil",
+    "size": 10176
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-small/MelSpectrogram.mlmodelc/weights/weight.bin",
+    "size": 354080
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-small/TextDecoder.mlmodelc/analytics/coremldata.bin",
+    "size": 243
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-small/TextDecoder.mlmodelc/coremldata.bin",
+    "size": 633
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-small/TextDecoder.mlmodelc/metadata.json",
+    "size": 4757
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-small/TextDecoder.mlmodelc/model.mil",
+    "size": 392094
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-small/TextDecoder.mlmodelc/model.mlmodel",
+    "size": 313629
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-small/TextDecoder.mlmodelc/weights/weight.bin",
+    "size": 307287346
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-small/config.json",
+    "size": 1456
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-small/generation_config.json",
+    "size": 2779
+  }
+]

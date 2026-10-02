@@ -1,0 +1,122 @@
+[
+  {
+    "type": "file",
+    "path": "openai_whisper-large-v3_turbo/AudioEncoder.mlmodelc/analytics/coremldata.bin",
+    "size": 243
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-large-v3_turbo/AudioEncoder.mlmodelc/coremldata.bin",
+    "size": 348
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-large-v3_turbo/AudioEncoder.mlmodelc/metadata.json",
+    "size": 1877
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-large-v3_turbo/AudioEncoder.mlmodelc/model.mil",
+    "size": 7006617
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-large-v3_turbo/AudioEncoder.mlmodelc/model.mlmodel",
+    "size": 408667
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-large-v3_turbo/AudioEncoder.mlmodelc/weights/weight.bin",
+    "size": 1273974400
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-large-v3_turbo/MelSpectrogram.mlmodelc/analytics/coremldata.bin",
+    "size": 243
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-large-v3_turbo/MelSpectrogram.mlmodelc/coremldata.bin",
+    "size": 329
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-large-v3_turbo/MelSpectrogram.mlmodelc/metadata.json",
+    "size": 1850
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-large-v3_turbo/MelSpectrogram.mlmodelc/model.mil",
+    "size": 10187
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-large-v3_turbo/MelSpectrogram.mlmodelc/weights/weight.bin",
+    "size": 373376
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-large-v3_turbo/TextDecoder.mlmodelc/analytics/coremldata.bin",
+    "size": 243
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-large-v3_turbo/TextDecoder.mlmodelc/coremldata.bin",
+    "size": 637
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-large-v3_turbo/TextDecoder.mlmodelc/metadata.json",
+    "size": 4770
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-large-v3_turbo/TextDecoder.mlmodelc/model.mil",
+    "size": 1010477
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-large-v3_turbo/TextDecoder.mlmodelc/model.mlmodel",
+    "size": 805204
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-large-v3_turbo/TextDecoder.mlmodelc/weights/weight.bin",
+    "size": 1813201716
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-large-v3_turbo/TextDecoderContextPrefill.mlmodelc/analytics/coremldata.bin",
+    "size": 243
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-large-v3_turbo/TextDecoderContextPrefill.mlmodelc/coremldata.bin",
+    "size": 382
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-large-v3_turbo/TextDecoderContextPrefill.mlmodelc/metadata.json",
+    "size": 2236
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-large-v3_turbo/TextDecoderContextPrefill.mlmodelc/model.mil",
+    "size": 3778
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-large-v3_turbo/TextDecoderContextPrefill.mlmodelc/weights/weight.bin",
+    "size": 98304192
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-large-v3_turbo/config.json",
+    "size": 1163
+  },
+  {
+    "type": "file",
+    "path": "openai_whisper-large-v3_turbo/generation_config.json",
+    "size": 2810
+  }
+]
