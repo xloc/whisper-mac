@@ -8,14 +8,21 @@ import WhisperPTTCore
 private let sampleRate = AudioSamples.sampleRate
 
 final class Recorder {
-    private let engine = AVAudioEngine()
+    private(set) var engine: AVAudioEngine?
     private let lock = NSLock()
     private var sourceRate = sampleRate
     private var samples = [Float]()
 
-    func start() throws {
+    func start(deviceUID: String?) throws {
+        // A fresh engine picks up device and sample-rate changes between recordings.
+        let engine = AVAudioEngine()
         let input = engine.inputNode
-        let format = input.inputFormat(forBus: 0)
+        try AudioInputDevices.select(deviceUID, on: input)
+        let format = input.outputFormat(forBus: 0)
+        guard format.sampleRate > 0, format.channelCount > 0 else {
+            throw NSError(domain: "WhisperPTTAudio", code: 2,
+                          userInfo: [NSLocalizedDescriptionKey: "The selected microphone has no audio input."])
+        }
         sourceRate = format.sampleRate
         samples.removeAll(keepingCapacity: true)
 
@@ -34,12 +41,21 @@ final class Recorder {
         }
 
         engine.prepare()
-        try engine.start()
+        do {
+            try engine.start()
+            self.engine = engine
+        } catch {
+            engine.stop()
+            input.removeTap(onBus: 0)
+            throw error
+        }
     }
 
     func stop() -> [Float] {
+        guard let engine else { return [] }
         engine.stop()
         engine.inputNode.removeTap(onBus: 0)
+        self.engine = nil
         lock.lock()
         let recorded = samples
         lock.unlock()
@@ -74,6 +90,9 @@ final class PushToTalk {
     private var historyError: String?
     private var settings = AppSettings()
     private var startupError: String?
+    private var audioInputError: String?
+    private var audioInputMonitor: AudioInputMonitor?
+    private var audioEngineObserver: NSObjectProtocol?
     private var busy: Bool { loading || recording || transcribing }
 
     init(modelName: String?) {
@@ -90,6 +109,23 @@ final class PushToTalk {
             historyError = "Could not load history: \(error.localizedDescription)"
         }
         installStatusItem()
+        do {
+            audioInputMonitor = try AudioInputMonitor { [weak self] in
+                Task { @MainActor in self?.refreshAudioInputs() }
+            }
+        } catch { startupError = "Could not monitor audio inputs: \(error.localizedDescription)" }
+        audioEngineObserver = NotificationCenter.default.addObserver(
+            forName: .AVAudioEngineConfigurationChange, object: nil, queue: .main
+        ) { [weak self] notification in
+            guard let engine = notification.object as? AVAudioEngine else { return }
+            // Defer teardown until after AVAudioEngine's notification handler returns.
+            Task { @MainActor in
+                guard let self, self.recording, self.recorder.engine === engine, !engine.isRunning else { return }
+                self.recording = false
+                _ = self.recorder.stop()
+                self.setStatus(.error, "Audio input was interrupted. Please record again.")
+            }
+        }
         showWindow()
         if let startupError {
             setStatus(.error, startupError)
@@ -160,6 +196,7 @@ final class PushToTalk {
 
     @objc private func showWindow() {
         if window == nil { createWindow() }
+        refreshAudioInputs()
         refreshInventory()
         window?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
@@ -170,6 +207,7 @@ final class PushToTalk {
         let actions: [(NSControl, Selector)] = [
             (newWindow.model, #selector(modelChanged(_:))),
             (newWindow.shortcut, #selector(shortcutChanged(_:))),
+            (newWindow.audioInput, #selector(audioInputChanged(_:))),
             (newWindow.requestMicrophone, #selector(requestMicrophone)),
             (newWindow.requestAccessibility, #selector(requestAccessibility)),
             (newWindow.microphoneSettings, #selector(openMicrophoneSettings)),
@@ -195,7 +233,7 @@ final class PushToTalk {
         newWindow.transcript.string = history.last?.text ?? ""
         updateHistory()
         NotificationCenter.default.addObserver(
-            self, selector: #selector(updateWindow), name: NSApplication.didBecomeActiveNotification, object: NSApp
+            self, selector: #selector(refreshAudioInputs), name: NSApplication.didBecomeActiveNotification, object: NSApp
         )
     }
 
@@ -204,6 +242,7 @@ final class PushToTalk {
         window?.model.isEnabled = !busy && downloading == nil && startupError == nil
         window?.shortcut.selectItem(at: Hotkey.allCases.firstIndex(of: hotkey) ?? 0)
         window?.shortcut.isEnabled = whisper != nil && !busy
+        window?.audioInput.isEnabled = !recording && !transcribing && startupError == nil
         let microphone = AVCaptureDevice.authorizationStatus(for: .audio)
         switch microphone {
         case .authorized: window?.microphone.stringValue = "Allowed"
@@ -221,11 +260,13 @@ final class PushToTalk {
         window?.testPaste.isEnabled = trusted && !busy
         window?.transcriptPlaceholder.isHidden = !(window?.transcript.string.isEmpty ?? true)
 
-        let displayed = status.displayed(microphoneAllowed: microphone == .authorized, accessibilityAllowed: trusted)
+        var displayed = status.displayed(microphoneAllowed: microphone == .authorized, accessibilityAllowed: trusted)
+        if displayed == .ready, audioInputError != nil { displayed = .error }
         let message: String
         switch displayed {
         case .permissionRequired: message = "Grant Microphone and Accessibility access to use push-to-talk."
         case .ready: message = "Focus an input, hold \(hotkey.title) to speak, then release."
+        case .error where status == .ready: message = audioInputError ?? statusMessage
         default: message = statusMessage
         }
         window?.status.stringValue = displayed.title
@@ -237,6 +278,34 @@ final class PushToTalk {
         statusSymbol.update(displayed, reduceMotion: NSWorkspace.shared.accessibilityDisplayShouldReduceMotion)
         statusItem?.button?.setAccessibilityLabel("Whisper PTT — \(message)")
         statusItem?.button?.toolTip = "Whisper PTT — \(message)"
+    }
+
+    @objc private func refreshAudioInputs() {
+        do {
+            let devices = try AudioInputDevices.available()
+            let defaultID = try AudioInputDevices.defaultID()
+            do {
+                _ = try AudioInputDevices.resolve(settings.inputDeviceUID, devices: devices, defaultID: defaultID)
+                audioInputError = nil
+            } catch { audioInputError = error.localizedDescription }
+            window?.showAudioInputs(devices, defaultID: defaultID,
+                                    selectedUID: settings.inputDeviceUID, error: audioInputError)
+        } catch {
+            audioInputError = "Could not list audio inputs: \(error.localizedDescription)"
+            window?.showAudioInputs([], defaultID: nil, selectedUID: settings.inputDeviceUID, error: audioInputError)
+        }
+        updateWindow()
+    }
+
+    @objc private func audioInputChanged(_ sender: NSPopUpButton) {
+        guard !recording, !transcribing, startupError == nil else {
+            refreshAudioInputs()
+            return
+        }
+        settings.inputDeviceUID = sender.selectedItem?.representedObject as? String
+        refreshAudioInputs()
+        if !busy, whisper != nil { setStatus(.ready, "Ready") }
+        saveSettings()
     }
 
     private func setStatus(_ status: PTTStatus, _ message: String) {
@@ -495,21 +564,31 @@ final class PushToTalk {
             setStatus(.permissionRequired, "Grant Microphone and Accessibility access.")
             return
         }
+        refreshAudioInputs()
+        guard audioInputError == nil else {
+            setStatus(.ready, "Ready")
+            return
+        }
         do {
-            try recorder.start()
+            try recorder.start(deviceUID: settings.inputDeviceUID)
             recording = true
             print("recording…")
             setStatus(.recording, "Recording… release \(hotkey.title) to transcribe")
         } catch {
             fputs("failed to start microphone: \(error)\n", stderr)
-            setStatus(.error, "Microphone failed to start")
+            setStatus(.error, "Microphone failed to start: \(error.localizedDescription)")
         }
     }
 
     private func finishRecording() {
         guard recording else { return }
+        let uninterrupted = recorder.engine?.isRunning == true
         recording = false
         let audio = recorder.stop()
+        guard uninterrupted else {
+            setStatus(.error, "Audio input was interrupted. Please record again.")
+            return
+        }
         guard audio.count > Int(sampleRate * 0.05), let whisper else {
             setStatus(.noSpeech, "Recording was too short")
             return

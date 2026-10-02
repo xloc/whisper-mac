@@ -1,4 +1,5 @@
 import AppKit
+import WhisperPTTCore
 
 @MainActor
 final class PTTWindow: NSWindow, NSTabViewDelegate {
@@ -12,6 +13,7 @@ final class PTTWindow: NSWindow, NSTabViewDelegate {
     var onTabChange: (() -> Void)?
     let model = NSPopUpButton(frame: .zero, pullsDown: false)
     let shortcut = NSPopUpButton(frame: .zero, pullsDown: false)
+    let audioInput = NSPopUpButton(frame: .zero, pullsDown: false)
     let microphone = NSTextField(labelWithString: "Checking…")
     let accessibility = NSTextField(labelWithString: "Checking…")
     let requestMicrophone = NSButton(title: "Allow…", target: nil, action: nil)
@@ -25,14 +27,14 @@ final class PTTWindow: NSWindow, NSTabViewDelegate {
 
     init(modelName: String, models: [String], shortcuts: [String]) {
         super.init(
-            contentRect: NSRect(x: 0, y: 0, width: 640, height: 600),
+            contentRect: NSRect(x: 0, y: 0, width: 640, height: 640),
             styleMask: [.titled, .closable, .miniaturizable, .resizable],
             backing: .buffered,
             defer: false
         )
         title = "Whisper PTT"
         isReleasedWhenClosed = false
-        contentMinSize = NSSize(width: 640, height: 580)
+        contentMinSize = NSSize(width: 640, height: 620)
         for name in models.contains(modelName) ? models : models + [modelName] {
             model.addItem(withTitle: ModelList.displayName(name))
             model.lastItem?.representedObject = name
@@ -65,10 +67,15 @@ final class PTTWindow: NSWindow, NSTabViewDelegate {
 
         let settings = form([
             [NSTextField(labelWithString: "Shortcut"), shortcut],
+            [NSTextField(labelWithString: "Audio Input"), audioInput],
             [NSTextField(labelWithString: "Model"), model]
         ])
-        settings.cell(atColumnIndex: 1, rowIndex: 0).xPlacement = .leading
-        settings.cell(atColumnIndex: 1, rowIndex: 1).xPlacement = .leading
+        for row in 0..<settings.numberOfRows {
+            settings.cell(atColumnIndex: 1, rowIndex: row).xPlacement = .leading
+        }
+        audioInput.widthAnchor.constraint(lessThanOrEqualToConstant: 360).isActive = true
+        audioInput.menu?.autoenablesItems = false
+        audioInput.toolTip = "System Default follows your Mac's input setting. Selecting a device applies only to Whisper PTT."
         let permissions = form([
             [NSTextField(labelWithString: "Microphone"), microphone, requestMicrophone, microphoneSettings],
             [NSTextField(labelWithString: "Accessibility"), accessibility, requestAccessibility, accessibilitySettings]
@@ -191,6 +198,28 @@ final class PTTWindow: NSWindow, NSTabViewDelegate {
     func tabView(_ tabView: NSTabView, didSelect tabViewItem: NSTabViewItem?) {
         testPaste.isHidden = tabViewItem?.identifier as? String != "dictation"
         onTabChange?()
+    }
+
+    func showAudioInputs(_ devices: [AudioInputDevice], defaultID: UInt32?, selectedUID: String?, error: String?) {
+        audioInput.removeAllItems()
+        let defaultName = devices.first { $0.id == defaultID }?.name
+        audioInput.addItem(withTitle: defaultName.map { "System Default — \($0)" } ?? "System Default")
+        audioInput.lastItem?.toolTip = error ?? "Use your Mac's current default microphone."
+        for device in devices {
+            audioInput.addItem(withTitle: device.name)
+            audioInput.lastItem?.representedObject = device.uid
+        }
+        if let selectedUID {
+            if let item = audioInput.itemArray.first(where: { $0.representedObject as? String == selectedUID }) {
+                audioInput.select(item)
+            } else {
+                audioInput.addItem(withTitle: "Selected microphone unavailable")
+                audioInput.lastItem?.representedObject = selectedUID
+                audioInput.lastItem?.isEnabled = false
+                audioInput.lastItem?.toolTip = "Reconnect your microphone or choose another audio input."
+                audioInput.selectItem(at: audioInput.numberOfItems - 1)
+            }
+        }
     }
 
     private func embed(_ view: NSView, in content: NSView) {

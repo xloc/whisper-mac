@@ -3,10 +3,12 @@ import Foundation
 public struct AppSettings: Codable, Equatable, Sendable {
     public var model: String
     public var hotkey: String
+    public var inputDeviceUID: String?
 
-    public init(model: String = "base", hotkey: String = "rightOption") {
+    public init(model: String = "base", hotkey: String = "rightOption", inputDeviceUID: String? = nil) {
         self.model = model
         self.hotkey = hotkey
+        self.inputDeviceUID = inputDeviceUID
     }
 }
 

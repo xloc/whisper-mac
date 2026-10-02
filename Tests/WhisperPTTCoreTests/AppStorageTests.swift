@@ -37,9 +37,20 @@ final class AppStorageTests: XCTestCase {
     func testSettingsPersistAcrossLaunches() throws {
         try withStorage { root, legacy, defaults in
             XCTAssertEqual(try AppStorage.prepare(root: root, legacyModels: legacy, defaults: defaults), AppSettings())
-            let settings = AppSettings(model: "tiny", hotkey: "f13")
+            var settings = AppSettings(model: "tiny", hotkey: "f13", inputDeviceUID: "usb-microphone")
             try AppStorage.saveSettings(settings, root: root)
             XCTAssertEqual(try AppStorage.prepare(root: root, legacyModels: legacy, defaults: defaults), settings)
+            settings.inputDeviceUID = nil
+            try AppStorage.saveSettings(settings, root: root)
+            XCTAssertEqual(try AppStorage.prepare(root: root, legacyModels: legacy, defaults: defaults), settings)
+        }
+    }
+
+    func testExistingSettingsWithoutAnInputDeviceUseSystemDefault() throws {
+        try withStorage { root, legacy, defaults in
+            try write(Data("{\"model\":\"tiny\",\"hotkey\":\"fn\"}".utf8), to: root.appendingPathComponent("settings.json"))
+            XCTAssertEqual(try AppStorage.prepare(root: root, legacyModels: legacy, defaults: defaults),
+                           AppSettings(model: "tiny", hotkey: "fn"))
         }
     }
 

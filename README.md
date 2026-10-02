@@ -10,7 +10,7 @@ The first build downloads the Swift dependencies. The first launch downloads the
 
 - `huggingface/`: models, shared tokenizers, partial downloads, and model size manifests.
 - `history.json`: transcripts across launches.
-- `settings.json`: shortcut and last successfully loaded model.
+- `settings.json`: shortcut, audio input device, and last successfully loaded model.
 
 On upgrade, the app moves the existing cache from `~/Library/Application Support/Whisper PTT/huggingface` and imports the previous model and shortcut preferences. History stays in place. The old preference keys are removed after the move succeeds. Quit the old app before launching this build. The much earlier `~/Documents/huggingface` location is not accessed by the app.
 
@@ -45,6 +45,8 @@ The menu-bar symbol uses Apple's native Symbols animations. Model loading (`prog
 
 The **Model** selector offers `tiny`, `base`, `small`, `medium`, `large-v3`, and `large-v3_turbo`. Switching unloads the previous model and downloads the new one if needed. The last successfully loaded selection is saved for the next launch. Model and shortcut changes are disabled during loading, recording, and transcription. Choose Right Option, Right Command, F13, or Fn / Globe; the shortcut is also saved. Each permission row has **Allow…** and **Open Settings…** buttons; the latter opens the matching Privacy & Security page in System Settings. Permission status refreshes when you return to the app. **Test Paste** hides the window briefly and sends a known string into the previous app, which isolates Accessibility/paste problems from Whisper transcription problems. Use **Quit** or **⌘Q** while the window is active to exit; closing the window keeps push-to-talk running in the menu bar.
 
+The **Audio Input** selector offers **System Default**, showing the current default microphone, and the available input devices. A specific device is saved by its persistent UID and used only by this app; the system's default is not changed. The list refreshes when devices connect or disconnect and when the system default changes. Reconnect an unavailable selected device or choose another input. Selection is disabled during recording and transcription. Each recording uses a fresh engine and resolves the current hardware ID, so reconnections and sample-rate changes apply to the next recording. A hardware interruption stops the recording and asks you to try again.
+
 The **Models** tab uses a native table with Model, Size, and Status columns. Select a row to see its details and available actions below. **Download** caches that model without changing the current dictation model, so the loaded model can keep transcribing. **Use Model** loads a downloaded model. **Remove Download** deletes inactive model files and partial downloads, leaving shared tokenizers intact. The model in use cannot be removed. The footer summarizes downloaded models and cached bytes; **More** offers **Show Selected Model in Finder**, **Refresh Model Sizes**, and **Open Model Folder…**. Switching models and removing files are disabled during downloads.
 
 Download progress appears as a percentage in the model's Status column, or above the other tabs. There are no progress bars. Preparing Core ML and the tokenizer is shown as a text status. For the listed models, progress uses completed files plus partial download bytes divided by the repository's total file size. A model is marked downloaded only when every listed file exists at its expected size. Sizes come from Hugging Face file manifests; a bundled snapshot and saved refreshes keep this information available offline. Sizes exclude shared tokenizer files and extra filesystem overhead. The bundled snapshots were read from `argmaxinc/whisperkit-coreml` on 2026-10-01.
@@ -62,6 +64,12 @@ swift test
 ```
 
 The tests cover shortcut press/release state, microphone sample-rate conversion, transcript assembly, permission status precedence, offline model sizes, partial downloads, truncated files, and model removal without deleting shared tokenizers. History tests save and reload across multiple sessions, preserve multilingual and repeated text, protect malformed files on read, and report write failures. Storage tests move models, tokenizers, and partial downloads, preserve existing history and settings, verify folder deletion resets the app, and protect malformed settings and conflicting model folders. The window reports runtime microphone, model, Accessibility, transcription, paste, and storage failures because device and permission checks require the user's environment.
+
+Audio input tests cover following the system default, persisting a specific microphone, changed hardware IDs after reconnection, and unavailable devices. To check the real device list and bind an engine to each available microphone without starting capture:
+
+```sh
+WHISPER_PTT_RUN_AUDIO_DEVICE_TESTS=1 swift test --filter AudioInputDevicesTests
+```
 
 To run the optional on-device model switching and language regression test, which downloads the base and tiny models if needed:
 
